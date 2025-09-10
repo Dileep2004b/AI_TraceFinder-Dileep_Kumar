@@ -10,7 +10,7 @@ from skimage.feature import local_binary_pattern as sk_lbp
 import altair as alt
 
 # --- Paths (adjust if needed) ---
-ART_DIR = "."
+ART_DIR = "model_files"
 FP_PATH = f"{ART_DIR}/scanner_fingerprints.pkl"
 ORDER_NPY = f"{ART_DIR}/fp_keys.npy"
 MODEL_PATH = f"{ART_DIR}/scanner_hybrid.keras"
@@ -146,3 +146,4 @@ if st.session_state["log"]:
         file_name="prediction_log.csv",
         mime="text/csv"
     )
+
