@@ -4,9 +4,6 @@ scikit-learn
 scikit-image
 numpy
 pandas
-opencv-python
 pywavelets
 scipy
-altair
-opencv-python
-
+pillow
