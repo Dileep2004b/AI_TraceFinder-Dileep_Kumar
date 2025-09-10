@@ -8,3 +8,5 @@ opencv-python
 pywavelets
 scipy
 altair
+opencv-python
+
