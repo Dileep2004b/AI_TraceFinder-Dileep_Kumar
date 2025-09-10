@@ -8,7 +8,7 @@ import io
 from scipy.fft import fft2, fftshift
 from skimage.feature import local_binary_pattern as sk_lbp
 
-# Paths to your model and artifacts
+# Paths for your project structure
 ART_DIR = "model_files"
 FP_PATH = f"{ART_DIR}/scanner_fingerprints.pkl"
 ORDER_NPY = f"{ART_DIR}/fp_keys.npy"
@@ -18,7 +18,7 @@ SCALER_PATH = f"{ART_DIR}/hybrid_feat_scaler.pkl"
 
 IMG_SIZE = (256, 256)
 
-# Load model and artifacts only once
+
 @st.cache_resource
 def load_resources():
     model = tf.keras.models.load_model(MODEL_PATH)
@@ -34,14 +34,12 @@ def load_resources():
 model, le, scaler, scanner_fps, fp_keys = load_resources()
 
 def preprocess_residual_pywt_bytes(image_bytes):
-    img = Image.open(io.BytesIO(image_bytes)).convert('L')
+    img = Image.open(io.BytesIO(image_bytes)).convert("L")
     img = img.resize(IMG_SIZE)
     img_array = np.array(img).astype(np.float32) / 255.0
-    cA, (cH, cV, cD) = pywt.dwt2(img_array, 'haar')
-    cH.fill(0)
-    cV.fill(0)
-    cD.fill(0)
-    den = pywt.idwt2((cA, (cH, cV, cD)), 'haar')
+    cA, (cH, cV, cD) = pywt.dwt2(img_array, "haar")
+    cH.fill(0); cV.fill(0); cD.fill(0)
+    den = pywt.idwt2((cA, (cH, cV, cD)), "haar")
     residual = (img_array - den).astype(np.float32)
     return residual
 
@@ -68,8 +66,11 @@ def fft_radial_energy(img, K=6):
 
 def lbp_hist_safe(img, P=8, R=1.0):
     rng = float(np.ptp(img))
-    g = (img - img.min()) / (rng + 1e-8) if rng >= 1e-12 else np.zeros_like(img)
-    g8 = (g * 255).astype(np.uint8)
+    if rng >= 1e-12:
+        g = (img - img.min()) / (rng + 1e-8)
+        g8 = (g * 255).astype(np.uint8)
+    else:
+        g8 = np.zeros_like(img, dtype=np.uint8)
     codes = sk_lbp(g8, P=P, R=R, method="uniform")
     n_bins = P + 2
     hist, _ = np.histogram(codes, bins=np.arange(n_bins + 1), density=True)
@@ -82,20 +83,20 @@ def make_feats_from_res(res):
     feats = np.array(v_corr + v_fft + v_lbp, dtype=np.float32).reshape(1, -1)
     return scaler.transform(feats)
 
-# Streamlit app starts here
+# ------ Streamlit UI -------
 st.title("Scanner Model Prediction")
-
-uploaded_file = st.file_uploader("Upload scanned image (jpg/png/tiff):", type=["jpg", "jpeg", "png", "tif", "tiff"])
-
+uploaded_file = st.file_uploader("Upload a scanned image (jpg/png/tiff):", type=["jpg", "jpeg", "png", "tif", "tiff"])
 if uploaded_file is not None:
     img_bytes = uploaded_file.read()
-    residual = preprocess_residual_pywt_bytes(img_bytes)
-    x_img = residual[np.newaxis, :, :, np.newaxis]
-    x_feat = make_feats_from_res(residual)
-    prob = model.predict([x_img, x_feat], verbose=0).ravel()
-    top_idx = int(np.argmax(prob))
-    label = le.classes_[top_idx]
-    confidence = prob[top_idx] * 100
-    st.image(Image.open(uploaded_file), caption="Uploaded Image", use_column_width=True)
-    st.success(f"Predicted Scanner Model: **{label}** with confidence {confidence:.2f}%")
-
+    try:
+        residual = preprocess_residual_pywt_bytes(img_bytes)
+        x_img = residual[np.newaxis, :, :, np.newaxis]
+        x_feat = make_feats_from_res(residual)
+        prob = model.predict([x_img, x_feat], verbose=0).ravel()
+        top_idx = int(np.argmax(prob))
+        label = le.classes_[top_idx]
+        confidence = prob[top_idx] * 100
+        st.image(Image.open(io.BytesIO(img_bytes)), caption="Uploaded Image", use_column_width=True)
+        st.success(f"Predicted Scanner Model: **{label}** with confidence {confidence:.2f}%")
+    except Exception as e:
+        st.error(f"Error during prediction: {e}")
