@@ -10,11 +10,11 @@ from skimage.feature import local_binary_pattern as sk_lbp
 
 # Paths for your project structure
 ART_DIR = "model_files"
-FP_PATH = f"{ART_DIR}/scanner_fingerprints.pkl"
-ORDER_NPY = f"{ART_DIR}/fp_keys.npy"
-MODEL_PATH = f"{ART_DIR}/scanner_hybrid.keras"
-ENCODER_PATH = f"{ART_DIR}/hybrid_label_encoder.pkl"
-SCALER_PATH = f"{ART_DIR}/hybrid_feat_scaler.pkl"
+FP_PATH = f"Dileep/{ART_DIR}/scanner_fingerprints.pkl"
+ORDER_NPY = f"Dileep/{ART_DIR}/fp_keys.npy"
+MODEL_PATH = f"Dileep/{ART_DIR}/scanner_hybrid.keras"
+ENCODER_PATH = f"Dileep/{ART_DIR}/hybrid_label_encoder.pkl"
+SCALER_PATH = f"Dileep/{ART_DIR}/hybrid_feat_scaler.pkl"
 
 IMG_SIZE = (256, 256)
 
@@ -100,3 +100,4 @@ if uploaded_file is not None:
         st.success(f"Predicted Scanner Model: **{label}** with confidence {confidence:.2f}%")
     except Exception as e:
         st.error(f"Error during prediction: {e}")
+
